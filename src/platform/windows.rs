@@ -1801,6 +1801,7 @@ fn get_before_uninstall(kill_self: bool) -> String {
     sc delete {app_name}
     taskkill /F /IM {broker_exe}
     taskkill /F /IM {app_name}.exe{filter}
+    taskkill /F /IM rustdesk.exe{filter}
     reg delete HKEY_CLASSES_ROOT\\.{ext} /f
     reg delete HKEY_CLASSES_ROOT\\{ext} /f
     netsh advfirewall firewall delete rule name=\"{app_name} Service\"
@@ -4954,3 +4955,4 @@ ProcessId=10136
         assert_eq!(pids.len(), 0);
     }
 }
+
