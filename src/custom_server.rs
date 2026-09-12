@@ -36,6 +36,20 @@ fn get_custom_server_from_config_string(s: &str) -> ResultType<CustomServer> {
     }
 }
 
+// Extrai um token de vinculo automatico do nome do arquivo, ex: "ConectBlue-Install-vinc=abc123.exe".
+// Independente do parsing de host=/key=/etc acima - nao precisa de "host=" presente.
+pub fn get_vinc_token_from_string(s: &str) -> Option<String> {
+    let lower = s.to_lowercase();
+    if let Some(pos) = lower.find("vinc=") {
+        let rest = &s[pos + 5..];
+        let tok: String = rest.chars().take_while(|c| c.is_ascii_alphanumeric()).collect();
+        if !tok.is_empty() {
+            return Some(tok);
+        }
+    }
+    None
+}
+
 pub fn get_custom_server_from_string(s: &str) -> ResultType<CustomServer> {
     let s = if s.to_lowercase().ends_with(".exe.exe") {
         &s[0..s.len() - 8]
