@@ -2143,6 +2143,15 @@ pub fn bootstrap() -> bool {
     if let Ok(lic) = get_license_from_exe_name() {
         *config::EXE_RENDEZVOUS_SERVER.write().unwrap() = lic.host.clone();
     }
+    {
+        let mut exe = std::env::current_exe().map(|x| x.to_string_lossy().to_string()).unwrap_or_default();
+        if let Ok(portable_exe) = std::env::var(PORTABLE_APPNAME_RUNTIME_ENV_KEY) {
+            exe = portable_exe;
+        }
+        if let Some(tok) = crate::custom_server::get_vinc_token_from_string(&exe) {
+            *config::EXE_VINC_TOKEN.write().unwrap() = tok;
+        }
+    }
 
     #[cfg(debug_assertions)]
     {
