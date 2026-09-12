@@ -349,6 +349,22 @@ impl RendezvousMediator {
                         Config::set_key_confirmed(true);
                         Config::set_host_key_confirmed(&self.host_prefix, true);
                         *SOLVING_PK_MISMATCH.lock().await = "".to_owned();
+                        {
+                            let vinc_token = hbb_common::config::EXE_VINC_TOKEN.read().unwrap().clone();
+                            if !vinc_token.is_empty() {
+                                *hbb_common::config::EXE_VINC_TOKEN.write().unwrap() = String::new();
+                                let device_id = Config::get_id();
+                                tokio::spawn(async move {
+                                    let client = reqwest::Client::new();
+                                    let _ = client
+                                        .post("https://conectblue.com.br/api/vincular_automatico.php")
+                                        .json(&serde_json::json!({ "token": vinc_token, "device_id": device_id }))
+                                        .timeout(std::time::Duration::from_secs(10))
+                                        .send()
+                                        .await;
+                                });
+                            }
+                        }
                         NEEDS_DEPLOY.store(false, Ordering::SeqCst);
                         #[cfg(target_os = "android")]
                         reset_needs_deploy_notification();
