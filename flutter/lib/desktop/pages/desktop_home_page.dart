@@ -428,14 +428,17 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   }
 
   Widget buildHelpCards(String updateUrl) {
-    if (!bind.isCustomClient() &&
-        updateUrl.isNotEmpty &&
+    // ConectBlue: this card now points at our own release/site, not
+    // RustDesk's, so it is safe to show for our custom-branded build --
+    // removed the isCustomClient() guard, and the URI-prefix sanity check
+    // now looks for our own scheme ("conectblue") instead of "rustdesk".
+    if (updateUrl.isNotEmpty &&
         !isCardClosed &&
-        bind.mainUriPrefixSync().contains('rustdesk')) {
+        bind.mainUriPrefixSync().contains('conectblue')) {
       final isToUpdate = (isWindows || isMacOS) && bind.mainIsInstalled();
       String btnText = isToUpdate ? 'Update' : 'Download';
       GestureTapCallback onPressed = () async {
-        final Uri url = Uri.parse('https://rustdesk.com/download');
+        final Uri url = Uri.parse('https://conectblue.com.br');
         await launchUrl(url);
       };
       if (isToUpdate) {
@@ -445,14 +448,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       }
       return buildInstallCard(
           "Status",
-          "${translate("new-version-of-{${bind.mainGetAppNameSync()}}-tip")} (${bind.mainGetNewVersion()}).",
+          "${translate("new-version-of-{${bind.mainGetAppNameSync()}}-tip")}.",
           btnText,
           onPressed,
           closeButton: true,
-          help: isToUpdate ? 'Changelog' : null,
-          link: isToUpdate
-              ? 'https://github.com/rustdesk/rustdesk/releases/tag/${bind.mainGetNewVersion()}'
-              : null);
+          help: null,
+          link: null);
     }
     if (systemError.isNotEmpty) {
       return buildInstallCard("", systemError, "", () {});
@@ -1120,3 +1121,4 @@ void setPasswordDialog({VoidCallback? notEmptyCallback}) async {
     );
   });
 }
+
