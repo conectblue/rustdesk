@@ -493,6 +493,22 @@ jobs:
         with:
           version: ${{ env.LLVM_VERSION }}
 
+      # rustup upstream started refusing to install an i686 HOST toolchain on an
+      # x86_64 runner without an explicit override ("may not be able to run on
+      # this system"), even though Windows runs 32-bit binaries fine via WOW64.
+      # Pre-install it ourselves with --force-non-host so the toolchain already
+      # exists by the time the action below runs its own (unforced) install.
+      - name: Pre-install i686 host toolchain (rustup host-check workaround)
+        shell: bash
+        run: |
+          if ! command -v rustup &>/dev/null; then
+            curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://win.rustup.rs/x86_64 --output "$RUNNER_TEMP/rustup-init.exe"
+            "$RUNNER_TEMP/rustup-init.exe" --default-toolchain none --no-modify-path -y
+          fi
+          export PATH="$USERPROFILE/.cargo/bin:$PATH"
+          echo "$USERPROFILE/.cargo/bin" >> "$GITHUB_PATH"
+          rustup toolchain install nightly-2023-10-13-i686-pc-windows-msvc --target i686-pc-windows-msvc --component rustfmt --profile minimal --no-self-update --force-non-host
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
         with:
