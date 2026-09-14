@@ -996,50 +996,37 @@ pub fn is_modifier(evt: &KeyEvent) -> bool {
 }
 
 pub fn check_software_update() {
-    if is_custom_client() {
-        return;
-    }
     let opt = LocalConfig::get_option(keys::OPTION_ENABLE_CHECK_UPDATE);
     if config::option2bool(keys::OPTION_ENABLE_CHECK_UPDATE, &opt) {
         std::thread::spawn(move || allow_err!(do_check_software_update()));
     }
 }
 
-// No need to check `danger_accept_invalid_cert` for now.
-// Because the url is always `https://api.rustdesk.com/version/latest`.
+// ConectBlue: ask our own site whether there is a newer ConectBlue build,
+// instead of asking the official RustDesk API (which would offer the
+// vanilla unbranded installer). SOFTWARE_UPDATE_URL is set to our own
+// GitHub release tag page, matching the "tag"/"download" URL shape the
+// rest of the update flow (updater.rs, flutter_ffi.rs's download-file-*
+// handler) already expects -- only the owner/repo in the allowlist was
+// changed to match (see get_update_download_file_from_url in updater.rs).
+const CONECTBLUE_RELEASE_TAG_URL: &str =
+    "https://github.com/conectblue/rustdesk/releases/tag/nightly";
+
 #[tokio::main(flavor = "current_thread")]
 pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
-    let (request, url) =
-        hbb_common::version_check_request(hbb_common::VER_TYPE_RUSTDESK_CLIENT.to_string());
-    let proxy_conf = Config::get_socks();
-    let tls_url = get_url_for_tls(&url, &proxy_conf);
-    let tls_type = get_cached_tls_type(tls_url);
-    let is_tls_not_cached = tls_type.is_none();
-    let tls_type = tls_type.unwrap_or(TlsType::Rustls);
-    let client = create_http_client_async(tls_type, false);
-    let latest_release_response = match client.post(&url).json(&request).send().await {
-        Ok(resp) => {
-            upsert_tls_cache(tls_url, tls_type, false);
-            resp
-        }
-        Err(err) => {
-            if is_tls_not_cached && err.is_request() {
-                let tls_type = TlsType::NativeTls;
-                let client = create_http_client_async(tls_type, false);
-                let resp = client.post(&url).json(&request).send().await?;
-                upsert_tls_cache(tls_url, tls_type, false);
-                resp
-            } else {
-                return Err(err.into());
-            }
-        }
-    };
-    let bytes = latest_release_response.bytes().await?;
-    let resp: hbb_common::VersionCheckResponse = serde_json::from_slice(&bytes)?;
-    let response_url = resp.url;
-    let latest_release_version = response_url.rsplit('/').next().unwrap_or_default();
+    let client = reqwest::Client::new();
+    let resp = client
+        .get("https://conectblue.com.br/versao.json")
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await?;
+    let bytes = resp.bytes().await?;
+    let json: serde_json::Value = serde_json::from_slice(&bytes)?;
+    let latest_build = json.get("build").and_then(|v| v.as_str()).unwrap_or("");
+    let current_build = env!("CONECTBLUE_BUILD");
 
-    if get_version_number(&latest_release_version) > get_version_number(crate::VERSION) {
+    if !latest_build.is_empty() && latest_build != current_build {
+        let response_url = CONECTBLUE_RELEASE_TAG_URL.to_string();
         #[cfg(feature = "flutter")]
         {
             let mut m = HashMap::new();
