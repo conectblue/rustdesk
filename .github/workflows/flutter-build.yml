@@ -510,7 +510,12 @@ jobs:
           fi
           export PATH="$USERPROFILE/.cargo/bin:$PATH"
           rustup toolchain install nightly-2023-10-13-i686-pc-windows-msvc --target i686-pc-windows-msvc --component rustfmt --profile minimal --no-self-update --force-non-host
-          rustup default nightly-2023-10-13-i686-pc-windows-msvc
+          # `rustup default` re-runs the same host-compat check and has no
+          # --force-non-host of its own, so select the toolchain via env var
+          # instead (rustup respects RUSTUP_TOOLCHAIN for every cargo/rustc
+          # call without needing it to be the machine-wide default).
+          export RUSTUP_TOOLCHAIN=nightly-2023-10-13-i686-pc-windows-msvc
+          echo "RUSTUP_TOOLCHAIN=nightly-2023-10-13-i686-pc-windows-msvc" >> "$GITHUB_ENV"
           rustc --version --verbose
 
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
