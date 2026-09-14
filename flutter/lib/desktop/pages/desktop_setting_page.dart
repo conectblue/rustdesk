@@ -2467,7 +2467,7 @@ class _AboutState extends State<_About> {
                       .marginSymmetric(vertical: 4.0)),
               InkWell(
                   onTap: () {
-                    launchUrlString('https://rustdesk.com/privacy.html');
+                    launchUrlString('https://conectblue.com.br/privacidade.php');
                   },
                   child: Text(
                     translate('Privacy Statement'),
@@ -2475,10 +2475,22 @@ class _AboutState extends State<_About> {
                   ).marginSymmetric(vertical: 4.0)),
               InkWell(
                   onTap: () {
-                    launchUrlString('https://rustdesk.com');
+                    launchUrlString('https://conectblue.com.br');
                   },
                   child: Text(
                     translate('Website'),
+                    style: linkStyle,
+                  ).marginSymmetric(vertical: 4.0)),
+              // ConectBlue e' construido sobre o RustDesk (AGPLv3). Este link
+              // e o texto abaixo cumprem a exigencia da licenca de oferecer,
+              // de forma visivel pra quem usa o programa, acesso ao
+              // codigo-fonte correspondente e credito ao projeto original.
+              InkWell(
+                  onTap: () {
+                    launchUrlString('https://github.com/conectblue/rustdesk');
+                  },
+                  child: Text(
+                    'Código-fonte (licença AGPLv3)',
                     style: linkStyle,
                   ).marginSymmetric(vertical: 4.0)),
               Container(
@@ -2495,6 +2507,11 @@ class _AboutState extends State<_About> {
                           Text(
                             'Copyright © ${DateTime.now().toString().substring(0, 4)} Purslane Tech Pte. Ltd.\n$license',
                             style: const TextStyle(color: Colors.white),
+                          ),
+                          Text(
+                            'Baseado no RustDesk (rustdesk.com), software livre sob licença AGPLv3. Código-fonte modificado disponível em github.com/conectblue.',
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 11),
                           ),
                           Text(
                             translate('Slogan_tip'),
