@@ -70,7 +70,7 @@ static CONTROLLING_SESSION_COUNT: AtomicUsize = AtomicUsize::new(0);
 /// Initial wait after startup before the first update check (30 seconds).
 pub const INITIAL_CHECK_DELAY: Duration = Duration::from_secs(30);
 
-/// One full day — default interval between update checks.
+/// One full day â€” default interval between update checks.
 pub const DUR_ONE_DAY: Duration = Duration::from_secs(60 * 60 * 24);
 
 /// Minimum interval between consecutive update checks (10 minutes).
@@ -375,7 +375,7 @@ pub fn get_update_download_file_from_url(url: &str) -> Option<PathBuf> {
     let tag = segments.next()?;
     let filename = segments.next()?;
 
-    if owner != "rustdesk"
+    if owner != "conectblue"
         || repo != "rustdesk"
         || releases != "releases"
         || download != "download"
@@ -427,26 +427,26 @@ pub fn has_no_active_conns_ipc() -> bool {
         // Shell-only SSH/TTY users are excluded, while an empty GUI set maps
         // to UID 0 so the LoginWindow server is queried rather than assumed idle.
         let uids = crate::platform::get_logged_in_uids();
-        // Check each user's server — fail closed if any has active connections
+        // Check each user's server â€” fail closed if any has active connections
         for uid in uids {
             if let Ok(mut conn) = crate::ipc::connect_for_uid(1000, uid, "").await {
                 if conn.send(&crate::ipc::Data::HasNoActiveConns(None)).await.is_ok() {
                     match conn.next_timeout(1000).await {
                         Ok(Some(crate::ipc::Data::HasNoActiveConns(Some(true)))) => {
-                            // Explicit no active connections — safe to continue
+                            // Explicit no active connections â€” safe to continue
                         }
                         Ok(Some(crate::ipc::Data::HasNoActiveConns(Some(false)))) => {
                             return false; // Explicit active connections
                         }
                         _ => {
-                            return false; // Timeout/error/unexpected — fail closed
+                            return false; // Timeout/error/unexpected â€” fail closed
                         }
                     }
                 } else {
-                    return false; // Send failed — fail closed
+                    return false; // Send failed â€” fail closed
                 }
             } else {
-                return false; // Connection failed — fail closed
+                return false; // Connection failed â€” fail closed
             }
         }
         true // All users explicitly confirmed no active connections
@@ -638,7 +638,7 @@ pub fn check_update_as_root() -> ResultType<bool> {
             .map_err(|e| { let _ = std::fs::remove_dir_all(&private_tmp); e })?;
     }
     log::info!("[root-update] Downloaded to {}", tmp_path);
-    // Recheck active sessions before installing — download can take minutes
+    // Recheck active sessions before installing â€” download can take minutes
     if !has_no_active_conns_ipc() {
         if let Err(e) = std::fs::remove_dir_all(&private_tmp) {
             log::warn!("[root-update] Failed to remove temp dir {}: {}", private_tmp, e);
@@ -661,7 +661,7 @@ mod tests {
     #[test]
     fn update_download_file_accepts_expected_github_asset_urls() {
         let file = get_download_file_from_url(
-            "https://github.com/rustdesk/rustdesk/releases/download/1.4.0/rustdesk-1.4.0-x86_64.dmg",
+            "https://github.com/conectblue/rustdesk/releases/download/1.4.0/rustdesk-1.4.0-x86_64.dmg",
         )
         .expect("valid GitHub release asset URL");
 
@@ -674,16 +674,20 @@ mod tests {
     #[test]
     fn update_download_file_rejects_untrusted_or_malformed_urls() {
         for url in [
-            "http://github.com/rustdesk/rustdesk/releases/download/1/rustdesk.exe",
+            "http://github.com/conectblue/rustdesk/releases/download/1/rustdesk.exe",
             "https://example.com/rustdesk.exe",
             "https://github.com/other/project/releases/download/1/rustdesk.exe",
-            "https://github.com/rustdesk/rustdesk/releases/download/1/",
-            "https://github.com/rustdesk/rustdesk/releases/download/1/nested/rustdesk.exe",
-            "https://github.com/rustdesk/rustdesk/releases/download/1/C:rustdesk.exe",
-            "https://user@github.com/rustdesk/rustdesk/releases/download/1/rustdesk.exe",
-            "https://github.com:443/rustdesk/rustdesk/releases/download/1/rustdesk.exe",
-            "https://github.com/rustdesk/rustdesk/releases/download/1/rustdesk.exe?download=1",
-            "https://github.com/rustdesk/rustdesk/releases/download/1/rustdesk.exe#download",
+            // The official upstream repo is deliberately rejected now -- we
+            // only trust our own fork, so an update check can never pull the
+            // vanilla unbranded installer over our custom client.
+            "https://github.com/rustdesk/rustdesk/releases/download/1/rustdesk.exe",
+            "https://github.com/conectblue/rustdesk/releases/download/1/",
+            "https://github.com/conectblue/rustdesk/releases/download/1/nested/rustdesk.exe",
+            "https://github.com/conectblue/rustdesk/releases/download/1/C:rustdesk.exe",
+            "https://user@github.com/conectblue/rustdesk/releases/download/1/rustdesk.exe",
+            "https://github.com:443/conectblue/rustdesk/releases/download/1/rustdesk.exe",
+            "https://github.com/conectblue/rustdesk/releases/download/1/rustdesk.exe?download=1",
+            "https://github.com/conectblue/rustdesk/releases/download/1/rustdesk.exe#download",
             "not a url",
         ] {
             assert!(get_download_file_from_url(url).is_none(), "{url}");
