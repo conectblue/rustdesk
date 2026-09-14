@@ -349,6 +349,52 @@ impl RendezvousMediator {
                         Config::set_key_confirmed(true);
                         Config::set_host_key_confirmed(&self.host_prefix, true);
                         *SOLVING_PK_MISMATCH.lock().await = "".to_owned();
+                        {
+                            // Only clear EXE_VINC_TOKEN once the link actually succeeds. A
+                            // transient network hiccup right after boot (no network yet,
+                            // firewall/AV not settled) used to permanently lose the token,
+                            // since RegisterPkResponse::OK only fires once per config
+                            // lifetime -- there was never a second chance. Retry a few
+                            // times with a delay before giving up; a definitive rejection
+                            // (token already used / device_id taken by another card) is
+                            // not worth retrying, so those stop early.
+                            let vinc_token = hbb_common::config::EXE_VINC_TOKEN.read().unwrap().clone();
+                            if !vinc_token.is_empty() {
+                                let device_id = Config::get_id();
+                                tokio::spawn(async move {
+                                    let client = reqwest::Client::new();
+                                    let mut linked = false;
+                                    for tentativa in 0..5 {
+                                        if tentativa > 0 {
+                                            tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+                                        }
+                                        let resp = client
+                                            .post("https://conectblue.com.br/api/vincular_automatico.php")
+                                            .json(&serde_json::json!({ "token": vinc_token, "device_id": device_id }))
+                                            .timeout(std::time::Duration::from_secs(10))
+                                            .send()
+                                            .await;
+                                        match resp {
+                                            Ok(r) if r.status().is_success() => {
+                                                linked = true;
+                                                break;
+                                            }
+                                            Ok(r) => {
+                                                let code = r.status().as_u16();
+                                                if code == 404 || code == 409 {
+                                                    // token ja usado, ou device_id ja vinculado em outro card
+                                                    break;
+                                                }
+                                            }
+                                            Err(_) => {}
+                                        }
+                                    }
+                                    if linked {
+                                        *hbb_common::config::EXE_VINC_TOKEN.write().unwrap() = String::new();
+                                    }
+                                });
+                            }
+                        }
                         NEEDS_DEPLOY.store(false, Ordering::SeqCst);
                         #[cfg(target_os = "android")]
                         reset_needs_deploy_notification();
@@ -995,3 +1041,4 @@ impl Drop for CheckIfResendPk {
         }
     }
 }
+
