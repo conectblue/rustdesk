@@ -41,12 +41,8 @@ class _OnlineStatusWidgetState extends State<OnlineStatusWidget> {
   double? get height => bind.isIncomingOnly() ? null : em * 3;
 
   void onUsePublicServerGuide() {
-    const url = "https://rustdesk.com/pricing";
-    canLaunchUrlString(url).then((can) {
-      if (can) {
-        launchUrlString(url);
-      }
-    });
+    // ConectBlue: never links out to rustdesk.com -- this client always uses
+    // ConectBlue's own dedicated server, so there is nothing to guide to.
   }
 
   @override
