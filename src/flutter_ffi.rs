@@ -77,6 +77,16 @@ fn initialize(app_dir: &str, custom_client_config: &str) {
     {
         // core_main's init_log does not work for flutter since it is only applied to its load_library in main.c
         hbb_common::init_log(false, "flutter_ffi");
+        // ConectBlue: core_main's bootstrap() (which extracts EXE_VINC_TOKEN from the
+        // installer filename and reports it to vincular_automatico.php) is only called
+        // from core_main.rs's main(), which the Flutter build never uses -- Flutter's
+        // real entrypoint is this initialize() function, called from Dart. Without this
+        // call, EXE_VINC_TOKEN was always empty and automatic device linking never ran.
+        #[cfg(windows)]
+        {
+            log::info!("[conectblue-vinc] calling bootstrap() from flutter initialize()");
+            crate::platform::windows::bootstrap();
+        }
     }
 }
 
