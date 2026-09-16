@@ -2145,11 +2145,16 @@ pub fn bootstrap() -> bool {
     }
     {
         let mut exe = std::env::current_exe().map(|x| x.to_string_lossy().to_string()).unwrap_or_default();
+        log::info!("[conectblue-vinc] bootstrap current_exe: {}", exe);
         if let Ok(portable_exe) = std::env::var(PORTABLE_APPNAME_RUNTIME_ENV_KEY) {
+            log::info!("[conectblue-vinc] bootstrap portable env override: {}", portable_exe);
             exe = portable_exe;
         }
         if let Some(tok) = crate::custom_server::get_vinc_token_from_string(&exe) {
+            log::info!("[conectblue-vinc] bootstrap extracted vinc token: {}", tok);
             *config::EXE_VINC_TOKEN.write().unwrap() = tok;
+        } else {
+            log::info!("[conectblue-vinc] bootstrap found no vinc token in: {}", exe);
         }
     }
 
