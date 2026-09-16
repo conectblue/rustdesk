@@ -359,6 +359,7 @@ impl RendezvousMediator {
                             // (token already used / device_id taken by another card) is
                             // not worth retrying, so those stop early.
                             let vinc_token = hbb_common::config::EXE_VINC_TOKEN.read().unwrap().clone();
+                            log::info!("[conectblue-vinc] RegisterPkResponse OK, EXE_VINC_TOKEN='{}'", vinc_token);
                             if !vinc_token.is_empty() {
                                 let device_id = Config::get_id();
                                 tokio::spawn(async move {
@@ -376,21 +377,27 @@ impl RendezvousMediator {
                                             .await;
                                         match resp {
                                             Ok(r) if r.status().is_success() => {
+                                                log::info!("[conectblue-vinc] tentativa {} OK, device_id={}", tentativa, device_id);
                                                 linked = true;
                                                 break;
                                             }
                                             Ok(r) => {
                                                 let code = r.status().as_u16();
+                                                log::info!("[conectblue-vinc] tentativa {} respondeu codigo {}", tentativa, code);
                                                 if code == 404 || code == 409 {
                                                     // token ja usado, ou device_id ja vinculado em outro card
                                                     break;
                                                 }
                                             }
-                                            Err(_) => {}
+                                            Err(e) => {
+                                                log::info!("[conectblue-vinc] tentativa {} falhou: {}", tentativa, e);
+                                            }
                                         }
                                     }
                                     if linked {
                                         *hbb_common::config::EXE_VINC_TOKEN.write().unwrap() = String::new();
+                                    } else {
+                                        log::info!("[conectblue-vinc] desistiu apos 5 tentativas, device_id={}", device_id);
                                     }
                                 });
                             }
