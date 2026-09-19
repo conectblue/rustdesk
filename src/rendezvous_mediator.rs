@@ -818,6 +818,12 @@ impl RendezvousMediator {
             uuid: uuid.into(),
             pk: pk.into(),
             no_register_device: Config::no_register_device(),
+            // ConectBlue: let the server report our auto-link, since it has
+            // no network restrictions unlike some locked-down client
+            // machines. Not cleared here -- the RegisterPkResponse::OK
+            // handler still clears EXE_VINC_TOKEN once linked, matching its
+            // own retry/fallback HTTPS attempt.
+            vinc_token: hbb_common::config::EXE_VINC_TOKEN.read().unwrap().clone(),
             ..Default::default()
         });
         socket.send(&msg_out).await?;
