@@ -432,8 +432,15 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     // RustDesk's, so it is safe to show for our custom-branded build --
     // removed the isCustomClient() guard, and the URI-prefix sanity check
     // now looks for our own scheme ("conectblue") instead of "rustdesk".
+    // ConectBlue: while not installed on Windows, the "Install" card always
+    // wins -- the "new version" card used to hide it, and without the
+    // service the lock screen / Ctrl+Alt+Del can't be controlled remotely.
+    // Once installed, the update card shows with a real "Update" button.
+    final mustInstallFirst =
+        isWindows && !bind.isDisableInstallation() && !bind.mainIsInstalled();
     if (updateUrl.isNotEmpty &&
         !isCardClosed &&
+        !mustInstallFirst &&
         bind.mainUriPrefixSync().contains('conectblue')) {
       final isToUpdate = (isWindows || isMacOS) && bind.mainIsInstalled();
       String btnText = isToUpdate ? 'Update' : 'Download';
