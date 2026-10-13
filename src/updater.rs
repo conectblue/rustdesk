@@ -204,7 +204,7 @@ fn check_update(manually: bool) -> ResultType<()> {
                 );
             };
             format!(
-                "{}/rustdesk-{}-{}.{}",
+                "{}/conectblue-{}-{}.{}",
                 download_url,
                 version,
                 arch,
