@@ -1009,14 +1009,16 @@ pub fn check_software_update() {
 // rest of the update flow (updater.rs, flutter_ffi.rs's download-file-*
 // handler) already expects -- only the owner/repo in the allowlist was
 // changed to match (see get_update_download_file_from_url in updater.rs).
+// ConectBlue Cliente (capado): its own release tag and version file, so an
+// incoming-only install is never "updated" into the full build.
 const CONECTBLUE_RELEASE_TAG_URL: &str =
-    "https://github.com/conectblue/rustdesk/releases/tag/nightly";
+    "https://github.com/conectblue/rustdesk/releases/tag/capado";
 
 #[tokio::main(flavor = "current_thread")]
 pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
     let client = reqwest::Client::new();
     let resp = client
-        .get("https://conectblue.com.br/versao.json")
+        .get("https://conectblue.com.br/versao_cliente.json")
         .timeout(std::time::Duration::from_secs(10))
         .send()
         .await?;
